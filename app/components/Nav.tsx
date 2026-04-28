@@ -18,23 +18,23 @@ export default function Nav() {
     const navItems = [
         { href: "/", label: "首页", icon: "home" },
         { href: "/blog", label: "AI编程", icon: "book", badge: "hot" },
-        { href: "/about", label: "关于", icon: "user" },
+        { href: "/about", label: "关于我们", icon: "user" },
     ];
 
     const tags = [
-        { name: "Python", tagClass: "tag-python" },
         { name: "AI", tagClass: "tag-ai" },
+        { name: "智能体", tagClass: "tag-python" },
         { name: "前端", tagClass: "tag-tech" },
         { name: "后端", tagClass: "tag-new" },
     ];
 
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
             {navItems.map((item) => (
                 <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`relative flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                         pathname === item.href
                             ? "text-[#ff7d00] bg-[#ff7d00]/10"
                             : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
@@ -52,19 +52,19 @@ export default function Nav() {
                 </Link>
             ))}
 
-            <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l border-[var(--border)]">
+            <div className="hidden md:flex items-center gap-3 ml-6 pl-6 border-l border-[var(--border)]">
                 {tags.map((tag) => (
                     <Link
                         key={tag.name}
-                        href={`/blog?tag=${tag.name}`}
-                        className={`px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 hover:scale-105 ${tag.tagClass}`}
+                        href={`/blog?tag=${encodeURIComponent(tag.name)}`}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 hover:scale-105 ${tag.tagClass}`}
                     >
                         {tag.name}
                     </Link>
                 ))}
             </div>
 
-            <div className="hidden lg:flex items-center gap-2 ml-4">
+            <div className="hidden lg:flex items-center gap-3 ml-6">
                 <div className="relative">
                     <input
                         type="text"
@@ -72,7 +72,7 @@ export default function Nav() {
                         onChange={(e) => setKeyword(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                         placeholder="搜索文章..."
-                        className="w-40 px-3 py-1.5 pl-9 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:border-[#ff7d00] focus:ring-1 focus:ring-[#ff7d00]/50 transition-all duration-200"
+                        className="w-48 px-4 py-2 pl-10 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:border-[#ff7d00] focus:ring-1 focus:ring-[#ff7d00]/50 transition-all duration-200"
                     />
                     <svg
                         className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]"

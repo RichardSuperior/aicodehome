@@ -1,77 +1,218 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-//import { Marked } from "marked";  
-import { micromark } from "micromark";
+import MarkdownIt from "markdown-it";
 
-
-// 1.定义Markdown文章存储文件夹路径
 const postsDirectory = path.join(process.cwd(), "content");
 
-// 2.定义单篇的文章类型
 export type Post = {
-  id: string; // 文章ID，通常是文件名
-  title: string; // 文章标题
-  date: string; // 文章发布日期
-  content: string; // 文章内容（Markdown格式）
-  excerpt: string; // 文章简介（从内容中提取的前几行文本）
-  tags?: string[]; // 文章标签（可选）
+  id: string;
+  title: string;
+  date: string;
+  content: string;
+  excerpt: string;
+  tags?: string[];
+  views?: number;
+  likes?: number;
+  isRecommended?: boolean;
 };
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    return dateStr;
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}年${month}月${day}日`;
+}
 
-
-// 3. 获取所有文章的列表，读取content文件夹中的所有Markdown文件，解析它们的内容和元数据，并返回一个包含所有文章信息的数组
 export function getAllPosts(): Post[] {
-  const fileNames = fs.readdirSync(postsDirectory); // 读取content文件夹中的所有文件名
+  const fileNames = fs.readdirSync(postsDirectory);
   const posts: Post[] = fileNames.map((fileName) => {
-    const id = fileName.replace(/\.md$/, ""); // 从文件名中提取文章ID（去掉.md后缀）
-    const fullPath = path.join(postsDirectory, fileName); // 获取文章的完整路径
-    const fileContents = fs.readFileSync(fullPath, "utf8"); // 读取文章内容
-    const { data, content } = matter(fileContents); // 使用gray-matter解析Markdown文件，提取元数据和内容
-    const dateStr = String(data.date ?? "未知日期"); // 将日期转换为字符串
-    
+    const id = fileName.replace(/\.md$/, "");
+    const fullPath = path.join(postsDirectory, fileName);
+    const fileContents = fs.readFileSync(fullPath, "utf8");
+    const { data, content } = matter(fileContents);
+    const rawDate = String(data.date ?? new Date().toISOString());
 
-    // 从内容中提取前200个字符作为简介
     const excerpt = content.substring(0, 200) + (content.length > 200 ? "..." : "");
 
     return {
       id,
-      title: data.title || "无标题", // 如果没有标题，使用默认值
-      date: dateStr, // 如果没有日期，使用默认值
+      title: data.title || "无标题",
+      date: formatDate(rawDate),
+      rawDate: rawDate,
       content,
       excerpt,
-      tags: data.tags || [], // 从元数据中提取标签，如果没有则使用空数组
+      tags: data.tags || [],
+      views: data.views || Math.floor(Math.random() * 5000) + 500,
+      likes: data.likes || Math.floor(Math.random() * 500) + 50,
+      isRecommended: data.isRecommended || false,
     };
   });
-  
-  // 按照日期降序排序文章列表
-  posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return posts;
+
+  posts.sort((a, b) => new Date((b as Post & { rawDate: string }).rawDate).getTime() - new Date((a as Post & { rawDate: string }).rawDate).getTime());
+  return posts;
 }
 
-// 4. 根据文章ID获取单篇文章的详情，读取对应的Markdown文件，解析内容和元数据，并返回文章信息
 export function getPostById(id: string): Post | null {
-  const fullPath = path.join(postsDirectory, `${id}.md`); // 获取文章的完整路径
+  const fullPath = path.join(postsDirectory, `${id}.md`);
   if (!fs.existsSync(fullPath)) {
-    return null; // 如果文件不存在，返回null
+    return null;
   }
-  const fileContents = fs.readFileSync(fullPath, "utf8"); // 读取文章内容
-  const { data, content } = matter(fileContents); // 使用gray-matter解析Markdown文件，提取元数据和内容
-  const dateStr = String(data.date ?? "未知日期"); // 将日期转换为字符串
-  const contentHTML = markdownToHtml(content); // 将Markdown内容转换为HTML格式
-  const tags = data.tags || []; // 从元数据中提取标签，如果没有则使用空数组
+  const fileContents = fs.readFileSync(fullPath, "utf8");
+  const { data, content } = matter(fileContents);
+  const rawDate = String(data.date ?? new Date().toISOString());
+  const contentHTML = markdownToHtml(content);
+  const tags = data.tags || [];
 
   return {
     id,
-    title: data.title || "无标题", // 如果没有标题，使用默认值
-    date: dateStr, // 如果没有日期，使用默认值
-    content: contentHTML, // 返回HTML格式的内容
-    excerpt: content.substring(0, 200) + (content.length > 200 ? "..." : ""), // 从内容中提取前200个字符作为简介
-    tags: tags || [], // 返回标签信息
+    title: data.title || "无标题",
+    date: formatDate(rawDate),
+    content: contentHTML,
+    excerpt: content.substring(0, 200) + (content.length > 200 ? "..." : ""),
+    tags: tags || [],
+    views: data.views || Math.floor(Math.random() * 5000) + 500,
+    likes: data.likes || Math.floor(Math.random() * 500) + 50,
+    isRecommended: data.isRecommended || false,
   };
 }
 
-// 5.将Markdown格式转出HTML格式
+export function getLatestPosts(): Post[] {
+  return getAllPosts();
+}
+
+export function getHotPosts(): Post[] {
+  const posts = getAllPosts();
+  return posts.sort((a, b) => (b.views || 0) - (a.views || 0));
+}
+
+export function getRecommendedPosts(): Post[] {
+  const posts = getAllPosts();
+  const recommended = posts.filter(post => post.isRecommended);
+  if (recommended.length === 0) {
+    return posts.slice(0, 3);
+  }
+  return recommended;
+}
+
+export function getAllTags(): { name: string; count: number }[] {
+  const posts = getAllPosts();
+  const tagCount: Record<string, number> = {};
+
+  posts.forEach(post => {
+    post.tags?.forEach(tag => {
+      tagCount[tag] = (tagCount[tag] || 0) + 1;
+    });
+  });
+
+  return Object.entries(tagCount)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function getPostsByTag(tag: string): Post[] {
+  const posts = getAllPosts();
+  return posts.filter(post => {
+    if (!post.tags || post.tags.length === 0) return false;
+    // 精确匹配
+    if (post.tags.includes(tag)) return true;
+    // 模糊匹配：检查标签是否包含搜索词
+    return post.tags.some(t => t.includes(tag));
+  });
+}
+
+export function getRelatedPosts(currentPostId: string, currentTags: string[], limit: number = 4): Post[] {
+  const allPosts = getAllPosts();
+  const otherPosts = allPosts.filter(post => post.id !== currentPostId);
+
+  if (currentTags.length === 0) {
+    const shuffled = [...otherPosts].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, limit);
+  }
+
+  const scoredPosts = otherPosts.map(post => {
+    let score = 0;
+    if (post.tags) {
+      currentTags.forEach(tag => {
+        if (post.tags?.includes(tag)) {
+          score += 1;
+        }
+      });
+    }
+    return { post, score };
+  });
+
+  scoredPosts.sort((a, b) => b.score - a.score);
+
+  const matchedPosts = scoredPosts.filter(item => item.score > 0).map(item => item.post);
+  const unmatchedPosts = scoredPosts.filter(item => item.score === 0).map(item => item.post);
+
+  const shuffledUnmatched = [...unmatchedPosts].sort(() => Math.random() - 0.5);
+  const result = [...matchedPosts, ...shuffledUnmatched].slice(0, limit);
+
+  return result;
+}
+
+export function getDailyRecommendedPosts(limit: number = 3): Post[] {
+  const allPosts = getAllPosts();
+  const shuffled = [...allPosts].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, limit);
+}
+
+export function getRelatedTags(currentTags: string[], limit: number = 12): { name: string; count: number }[] {
+  const allTags = getAllTags();
+
+  const relatedTags = allTags
+    .map(tag => ({
+      ...tag,
+      isRelated: currentTags.includes(tag.name)
+    }))
+    .sort((a, b) => {
+      if (a.isRelated !== b.isRelated) {
+        return a.isRelated ? -1 : 1;
+      }
+      return b.count - a.count;
+    })
+    .slice(0, limit);
+
+  return relatedTags.map(tag => ({ name: tag.name, count: tag.count }));
+}
+
 function markdownToHtml(mdText: string): string {
-  return micromark(mdText); // 使用marked库将Markdown转换为HTML
+  const md = new MarkdownIt({
+    html: true,
+    linkify: true,
+    typographer: true,
+    breaks: true,
+  });
+
+  md.set({
+    highlight: function (str: string, lang: string) {
+      return `<pre class="code-block"><code class="language-${lang}">${md.utils.escapeHtml(str)}</code></pre>`;
+    },
+  });
+
+  md.renderer.rules.heading_open = function (tokens: any[], idx: number) {
+    const level = tokens[idx].tag;
+    return `<${level} class="md-heading md-${level}">`;
+  };
+
+  md.renderer.rules.paragraph_open = function () {
+    return `<p class="md-paragraph">`;
+  };
+
+  md.renderer.rules.blockquote_open = function () {
+    return `<blockquote class="md-blockquote">`;
+  };
+
+  md.renderer.rules.code_inline = function (tokens: any[], idx: number) {
+    return `<code class="md-code-inline">${tokens[idx].content}</code>`;
+  };
+
+  const result = md.render(mdText);
+  return result;
 }

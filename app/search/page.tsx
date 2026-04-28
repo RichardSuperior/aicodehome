@@ -1,47 +1,27 @@
 import Link from "next/link";
+import { getAllPosts, getAllTags } from "../../lib/post";
 
-export default function SearchPage() {
-  const results = [
-    {
-      title: "深入理解大语言模型：Transformer架构详解",
-      excerpt: "本文深入剖析Transformer架构的核心原理，包括自注意力机制、多头注意力、位置编码等关键概念...",
-      tags: ["LLM", "AI"],
-      views: "3.2k",
-      date: "2025-01-15"
-    },
-    {
-      title: "Cursor高级技巧：让AI帮你写更优质的代码",
-      excerpt: "Cursor作为一款AI驱动的代码编辑器，提供了强大的代码补全和理解能力...",
-      tags: ["Cursor", "AI编程"],
-      views: "2.8k",
-      date: "2025-01-14"
-    },
-    {
-      title: "Python机器学习实战：构建你的第一个AI模型",
-      excerpt: "从零开始学习Python机器学习，使用scikit-learn构建分类和回归模型...",
-      tags: ["Python", "机器学习"],
-      views: "4.5k",
-      date: "2025-01-13"
-    },
-    {
-      title: "DeepSeek模型入门指南：开源大模型的探索之旅",
-      excerpt: "DeepSeek是一款优秀的开源大语言模型，本文带你了解其特点和使用方法...",
-      tags: ["DeepSeek", "LLM"],
-      views: "1.9k",
-      date: "2025-01-12"
-    },
-    {
-      title: "AI编程入门指南：从零开始学习人工智能开发",
-      excerpt: "对于想要入门AI编程的开发者来说，本文提供了系统的学习路径和资源推荐...",
-      tags: ["AI编程", "入门"],
-      views: "6.2k",
-      date: "2025-01-11"
-    },
-  ];
+export default function SearchPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const query = searchParams.q || "";
+  const allPosts = getAllPosts();
+  const allTags = getAllTags();
+  
+  const filteredPosts = query
+    ? allPosts.filter(
+        (post) =>
+          post.title.toLowerCase().includes(query.toLowerCase()) ||
+          post.excerpt.toLowerCase().includes(query.toLowerCase()) ||
+          post.tags?.some((tag) =>
+            tag.toLowerCase().includes(query.toLowerCase())
+          )
+      )
+    : allPosts;
 
-  const hotTags = [
-    "AI编程", "Python", "LLM", "Cursor", "机器学习", "DeepSeek", "前端", "后端"
-  ];
+  const hotTags = allTags.slice(0, 8).map((t) => t.name);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -54,9 +34,9 @@ export default function SearchPage() {
             </svg>
             <input
               type="text"
-              placeholder="搜索文章、标签、用户..."
+              placeholder="搜索文章、标签..."
               className="w-full pl-12 pr-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:border-[#ff7d00] focus:ring-1 focus:ring-[#ff7d00]/50 transition-all"
-              defaultValue="AI编程"
+              defaultValue={query}
             />
           </div>
           <button className="px-6 py-3 bg-gradient-juejin text-white font-medium rounded-lg hover:opacity-90 transition-opacity">
@@ -65,10 +45,10 @@ export default function SearchPage() {
         </div>
         <div className="flex items-center gap-2 mt-4">
           <span className="text-sm text-[var(--muted-foreground)]">热门搜索:</span>
-          {hotTags.slice(0, 5).map((tag) => (
+          {hotTags.map((tag) => (
             <Link
               key={tag}
-              href={`/search?q=${tag}`}
+              href={`/search?q=${encodeURIComponent(tag)}`}
               className="text-sm text-[#58a6ff] hover:text-[#79c0ff] transition-colors"
             >
               #{tag}
@@ -80,7 +60,9 @@ export default function SearchPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-[var(--muted-foreground)]">找到 <span className="text-[#ff7d00] font-semibold">5</span> 条相关结果</p>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              找到 <span className="text-[#ff7d00] font-semibold">{filteredPosts.length}</span> 条相关结果
+            </p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-[#58a6ff] cursor-pointer">综合</span>
               <span className="text-[var(--muted-foreground)] cursor-pointer hover:text-[var(--foreground)] transition-colors">最新</span>
@@ -89,34 +71,34 @@ export default function SearchPage() {
           </div>
 
           <div className="space-y-4">
-            {results.map((result, index) => (
+            {filteredPosts.map((post) => (
               <Link
-                key={index}
-                href="/blog/1"
+                key={post.id}
+                href={`/blog/${post.id}`}
                 className="block bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[#ff7d00]/30 transition-all"
               >
                 <h2 className="text-lg font-semibold text-[var(--foreground)] mb-2 line-clamp-1 group-hover:text-[#ff7d00] transition-colors">
-                  {result.title}
+                  {post.title}
                 </h2>
                 <p className="text-sm text-[var(--muted-foreground)] line-clamp-2 mb-3">
-                  {result.excerpt}
+                  {post.excerpt}
                 </p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {result.tags.map((tag, idx) => (
+                    {post.tags && post.tags.slice(0, 2).map((tag, idx) => (
                       <span key={idx} className="px-2 py-0.5 text-xs tag-tech">
                         {tag}
                       </span>
                     ))}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
-                    <span>{result.date}</span>
+                    <span>{post.date}</span>
                     <span className="flex items-center gap-1">
                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                      {result.views}
+                      {(post.views || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -124,17 +106,29 @@ export default function SearchPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">
-              <svg className="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 19l-7-7 7-7" />
+          {filteredPosts.length === 0 && (
+            <div className="text-center py-12 bg-[var(--card)] border border-[var(--border)] rounded-xl">
+              <svg className="w-12 h-12 mx-auto text-[var(--muted-foreground)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
               </svg>
-              上一页
-            </button>
-            <span className="px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg">1</span>
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">2</button>
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">下一页</button>
-          </div>
+              <p className="text-[var(--muted-foreground)]">暂无相关文章</p>
+            </div>
+          )}
+
+          {filteredPosts.length > 0 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">
+                <svg className="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+                上一页
+              </button>
+              <span className="px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg">1</span>
+              <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">2</button>
+              <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">下一页</button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -149,44 +143,12 @@ export default function SearchPage() {
               {hotTags.map((tag) => (
                 <Link
                   key={tag}
-                  href={`/blog?tag=${tag}`}
+                  href={`/blog?tag=${encodeURIComponent(tag)}`}
                   className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
                 >
                   <span>#{tag}</span>
                 </Link>
               ))}
-            </div>
-          </div>
-
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
-              <svg className="w-5 h-5 text-[#58a6ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 12h.01M12 12h.01M15 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span className="font-semibold text-[var(--foreground)]">搜索历史</span>
-            </div>
-            <div className="p-3">
-              <Link href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                AI编程
-              </Link>
-              <Link href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                Cursor教程
-              </Link>
-              <Link href="#" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                Python机器学习
-              </Link>
             </div>
           </div>
 
@@ -198,15 +160,15 @@ export default function SearchPage() {
               <span className="font-semibold text-[var(--foreground)]">推荐搜索</span>
             </div>
             <div className="space-y-2">
-              <Link href="#" className="block px-3 py-2 bg-[var(--secondary)]/50 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                DeepSeek 使用技巧
-              </Link>
-              <Link href="#" className="block px-3 py-2 bg-[var(--secondary)]/50 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                LLM 大模型入门
-              </Link>
-              <Link href="#" className="block px-3 py-2 bg-[var(--secondary)]/50 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors">
-                前端 AI 工具推荐
-              </Link>
+              {["AI编程入门", "大语言模型", "Python实战", "Cursor技巧"].map((item) => (
+                <Link
+                  key={item}
+                  href={`/search?q=${encodeURIComponent(item)}`}
+                  className="block px-3 py-2 bg-[var(--secondary)]/50 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors"
+                >
+                  {item}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

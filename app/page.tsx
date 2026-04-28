@@ -1,24 +1,40 @@
 import Link from "next/link";
-import { getAllPosts } from "../lib/post";
+import { getAllPosts, getAllTags, getHotPosts } from "../lib/post";
+
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 export default function Home() {
-  const latestPosts = getAllPosts().slice(0, 5);
+  const allPosts = getAllPosts();
+  const latestPosts = allPosts.slice(0, 5);
+  const hotPosts = getHotPosts().slice(0, 4);
+  const tags = getAllTags();
 
-  const trendingTopics = [
-    { name: "AI编程", count: "12.5k", hot: true },
-    { name: "Python", count: "8.3k", hot: true },
-    { name: "前端", count: "6.7k", new: true },
-    { name: "DeepSeek", count: "5.2k", hot: true },
-    { name: "Cursor", count: "4.8k", new: true },
-    { name: "LLM", count: "3.9k" },
-  ];
+  const trendingTopics = tags.slice(0, 6).map(tag => ({
+    name: tag.name,
+    count: `${(tag.count * 100).toLocaleString()}`,
+    hot: Math.random() > 0.5,
+    new: Math.random() > 0.7
+  }));
 
-  const hotArticles = [
-    { id: "1", title: "别再裸用 Claude Code 了！32 个亲测Skills", views: "45k", author: "蝎子莱莱" },
-    { id: "2", title: "体验完阿里「悟空」，我想把电脑里的龙虾换掉", views: "26k", author: "AI袋鼠帝" },
-    { id: "3", title: "全网最简单的 OpenClaw 部署教程", views: "22k", author: "AI编程之家" },
-    { id: "4", title: "搞懂 Cursor 后，我一行代码都不敲了", views: "3.4k", author: "清汤饺子" },
-  ];
+  const randomPosts = shuffleArray(allPosts).slice(0, 4);
+
+  const boilingPoints = randomPosts.map((post, index) => ({
+    id: post.id,
+    author: "AI编程之家",
+    avatar: "AI",
+    content: ` 刚刚发布了一篇关于${post.title}的文章，欢迎阅读！`,
+    likes: post.likes || Math.floor(Math.random() * 200) + 50,
+    comments: Math.floor(Math.random() * 500) + 100,
+    reposts: Math.floor(Math.random() * 150) + 30,
+    time: `${Math.floor(Math.random() * 60) + 1}分钟前`
+  }));
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -32,49 +48,47 @@ export default function Home() {
                 </svg>
                 <span className="font-semibold text-[var(--foreground)]">沸点</span>
               </div>
-              <Link href="#" className="text-sm text-[#58a6ff] hover:text-[#79c0ff] transition-colors">
-                查看全部
-              </Link>
             </div>
 
             <div className="p-4 space-y-4">
-              <div className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg hover:bg-[var(--secondary)] transition-colors cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-gradient-juejin flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-sm font-medium">AI</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[var(--foreground)] text-sm leading-relaxed">
-                    <span className="text-[#58a6ff] font-medium">AI编程之家</span>
-                    爆料称：快手研发线发布通知，收紧了对第三方编程软件的使用权限，只要在办公电脑上点开 Cursor，就直接闪退！
-                  </p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-[var(--muted-foreground)]">
-                    <span>151k 沸点</span>
-                    <span>544 评论</span>
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                      12.5k
-                    </span>
+              {boilingPoints.map((point) => (
+                <Link
+                  key={point.id}
+                  href={`/blog/${point.id}`}
+                  className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg hover:bg-[var(--secondary)] transition-colors cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-juejin flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-sm font-medium">{point.avatar}</span>
                   </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg hover:bg-[var(--secondary)] transition-colors cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a371f7] to-[#db61a2] flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-sm font-medium">AI</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[var(--foreground)] text-sm leading-relaxed">
-                    <span className="text-[#db61a2] font-medium">AI袋鼠帝</span>
-                    豆包也开始抢程序员饭碗了，一个月只要9块9。Doubao-Seed-Code编程能力确实没有达到全球顶尖水平，但它是国内首个支持视觉理解的编程模型！
-                  </p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-[var(--muted-foreground)]">
-                    <span>78k 沸点</span>
-                    <span>301 评论</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[var(--foreground)] text-sm leading-relaxed">
+                      <span className="text-[#58a6ff] font-medium">{point.author}</span>
+                      {point.content}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-[var(--muted-foreground)]">
+                      <span>{point.time}</span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                        {point.likes}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        {point.comments}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0 3-4.03 3-9s-1.343-9-3-9m-9 9a9 9 0 0 19 0" />
+                        </svg>
+                        {point.reposts}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -86,7 +100,7 @@ export default function Home() {
                 </svg>
                 <span className="font-semibold text-[var(--foreground)]">最新文章</span>
               </div>
-              <Link href="/blog" className="text-sm text-[#58a6ff] hover:text-[#79c0ff] transition-colors">
+              <Link href="/blog?tab=new" className="text-sm text-[#58a6ff] hover:text-[#79c0ff] transition-colors">
                 查看更多
               </Link>
             </div>
@@ -144,7 +158,7 @@ export default function Home() {
               {trendingTopics.map((topic, index) => (
                 <Link
                   key={topic.name}
-                  href={`/blog?tag=${topic.name}`}
+                  href={`/blog?tag=${encodeURIComponent(topic.name)}`}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--secondary)] transition-colors"
                 >
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
@@ -152,14 +166,13 @@ export default function Home() {
                   }`}>
                     {index + 1}
                   </span>
-                  <span className="flex-1 text-left text-sm text-[var(--foreground)]">{topic.name}</span>
+                  <span className="flex-1 text-left text-sm text-[var(--foreground)]">#{topic.name}</span>
                   {topic.hot && (
                     <span className="text-xs px-1.5 py-0.5 bg-[#f85149]/20 text-[#f85149] rounded">HOT</span>
                   )}
                   {topic.new && (
                     <span className="text-xs px-1.5 py-0.5 bg-[#3fb950]/20 text-[#3fb950] rounded">NEW</span>
                   )}
-                  <span className="text-xs text-[var(--muted-foreground)] flex-shrink-0">{topic.count}</span>
                 </Link>
               ))}
             </div>
@@ -173,10 +186,10 @@ export default function Home() {
               <span className="font-semibold text-[var(--foreground)]">热门文章</span>
             </div>
             <div className="p-2">
-              {hotArticles.map((article, index) => (
+              {hotPosts.map((post, index) => (
                 <Link
-                  key={article.id}
-                  href={`/blog/${article.id}`}
+                  key={post.id}
+                  href={`/blog/${post.id}`}
                   className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-[var(--secondary)] transition-colors"
                 >
                   <span className={`text-xs font-bold flex-shrink-0 mt-1 ${
@@ -185,11 +198,11 @@ export default function Home() {
                     {index + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[var(--foreground)] line-clamp-2 mb-1">{article.title}</p>
+                    <p className="text-sm text-[var(--foreground)] line-clamp-2 mb-1">{post.title}</p>
                     <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                      <span>{article.author}</span>
+                      <span>AI编程之家</span>
                       <span>·</span>
-                      <span>{article.views}</span>
+                      <span>{(post.views || 0).toLocaleString()}阅读</span>
                     </div>
                   </div>
                 </Link>
@@ -197,19 +210,37 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#ff7d00]/10 to-[#ff9500]/5 border border-[#ff7d00]/20 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <svg className="w-5 h-5 text-[#ff7d00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
+              <svg className="w-5 h-5 text-[#58a6ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <span className="font-semibold text-[var(--foreground)]">加入开发者社区</span>
+              <span className="font-semibold text-[var(--foreground)]">站点统计</span>
             </div>
-            <p className="text-sm text-[var(--muted-foreground)] mb-4">
-              与 12.5k+ 开发者一起探索 AI 编程的无限可能
-            </p>
-            <button className="w-full px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
-              立即加入
-            </button>
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-[var(--secondary)]/30 rounded-lg">
+                  <p className="text-2xl font-bold text-[#ff7d00]">{getAllPosts().length}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">文章总数</p>
+                </div>
+                <div className="text-center p-3 bg-[var(--secondary)]/30 rounded-lg">
+                  <p className="text-2xl font-bold text-[#58a6ff]">{tags.length}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">标签总数</p>
+                </div>
+                <div className="text-center p-3 bg-[var(--secondary)]/30 rounded-lg">
+                  <p className="text-2xl font-bold text-[#a371f7]">
+                    {getAllPosts().reduce((sum, post) => sum + (post.views || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">总阅读量</p>
+                </div>
+                <div className="text-center p-3 bg-[var(--secondary)]/30 rounded-lg">
+                  <p className="text-2xl font-bold text-[#3fb950]">
+                    {getAllPosts().reduce((sum, post) => sum + (post.likes || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">总点赞数</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

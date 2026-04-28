@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getPostById } from "../../../lib/post";
+import { getPostById, getDailyRecommendedPosts, getRelatedPosts, getRelatedTags } from "../../../lib/post";
+import ShareButton from "../../components/ShareButton";
 
 type Props = {
   params: Promise<{
@@ -7,9 +8,21 @@ type Props = {
   }>;
 };
 
+const mockComments = [
+  { id: 1, name: "全栈开发老王", avatar: "王", color: "from-[#58a6ff] to-[#a371f7]", time: "10分钟前", content: "终于有人把AI编程讲得这么透彻了！之前看了很多教程都是一知半解，这篇文章从原理到实践都有详细讲解，特别是代码示例部分非常实用，已经应用到我现在的项目中了。" },
+  { id: 2, name: "Python狂热爱好者", avatar: "Py", color: "from-[#3fb950] to-[#58a6ff]", time: "25分钟前", content: "作为一个有三年Python开发经验的程序员，这篇文章提到的技巧让我眼前一亮。尤其是关于如何利用AI提升开发效率的部分，真的帮了我大忙，太感谢作者了！" },
+  { id: 3, name: "计算机专业研究生", avatar: "研", color: "from-[#a371f7] to-[#db61a2]", time: "1小时前", content: "正在做AI相关的研究，这篇文章给了我很多启发。内容深度适中，既有理论讲解也有实战代码，对我的论文写作和实验都有很大帮助，强烈推荐！" },
+  { id: 4, name: "前端转行选手", avatar: "前", color: "from-[#db61a2] to-[#ff7d00]", time: "2小时前", content: "从土木工程转行到前端开发不到一年，之前对AI编程完全零基础。这篇文章让我第一次真正理解了AI辅助编程的概念，感谢作者深入浅出的讲解！" },
+  { id: 5, name: "十年架构师老李", avatar: "李", color: "from-[#ff7d00] to-[#ff9500]", time: "3小时前", content: "在IT行业摸爬滚打这么多年，见过太多华而不实的技术文章。这篇是真的干货，从架构设计到代码实现都很专业，体现了作者深厚的技术功底，必须点赞！" },
+];
+
 export default async function BlogPostPage({ params }: Props) {
   const { postId } = await params;
   const post = getPostById(postId);
+
+  const dailyPosts = getDailyRecommendedPosts(3);
+  const relatedPosts = post ? getRelatedPosts(post.id, post.tags || [], 4) : [];
+  const relatedTags = post ? getRelatedTags(post.tags || [], 12) : [];
 
   if (!post) {
     return (
@@ -71,12 +84,13 @@ export default async function BlogPostPage({ params }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-[var(--secondary)] border border-[var(--border)] rounded-full text-sm text-[var(--muted-foreground)] hover:text-[#ff7d00] hover:border-[#ff7d00]/50 transition-colors">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    关注
-                  </button>
+                  <div className="flex items-center gap-0.5 px-3 py-1.5 bg-[#ff7d00]/10 border border-[#ff7d00]/30 rounded-full">
+                    {[...Array(3)].map((_, i) => (
+                      <svg key={i} className="w-3.5 h-3.5 fill-[#ff7d00]" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -93,8 +107,8 @@ export default async function BlogPostPage({ params }: Props) {
                 </div>
               )}
 
-              <article className="prose prose-invert max-w-none">
-                <div className="text-[var(--foreground)] leading-relaxed" dangerouslySetInnerHTML={{ __html: post.content }} />
+              <article className="markdown-content">
+                <div dangerouslySetInnerHTML={{ __html: post.content }} />
               </article>
             </div>
           </div>
@@ -123,9 +137,13 @@ export default async function BlogPostPage({ params }: Props) {
                     <span>128.5k 获赞</span>
                   </div>
                 </div>
-                <button className="px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
-                  关注
-                </button>
+                <div className="flex items-center gap-0.5 px-4 py-2 bg-[#ff7d00]/10 border border-[#ff7d00]/30 rounded-lg">
+                    {[...Array(3)].map((_, i) => (
+                      <svg key={i} className="w-3.5 h-3.5 fill-[#ff7d00]" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
               </div>
             </div>
           </div>
@@ -135,128 +153,33 @@ export default async function BlogPostPage({ params }: Props) {
               <svg className="w-5 h-5 text-[#ff7d00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <span className="font-semibold text-[var(--foreground)]">评论 (32)</span>
+              <span className="font-semibold text-[var(--foreground)]">评论 ({mockComments.length})</span>
             </div>
             <div className="p-4">
-              <div className="flex gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[var(--secondary)] flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-[var(--muted-foreground)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 15s1.5-2 4-2 4 2 4 2M9 9h.01M15 9h.01" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <textarea
-                    placeholder="写下你的评论..."
-                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:border-[#ff7d00] focus:ring-1 focus:ring-[#ff7d00]/50 resize-none transition-all"
-                    rows={3}
-                  />
-                  <div className="flex items-center justify-end mt-2">
-                    <button className="px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
-                      发表评论
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-4">
-                <div className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#58a6ff] to-[#a371f7] flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">PY</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[var(--foreground)] font-medium">Python爱好者</span>
-                      <span className="text-xs text-[var(--muted-foreground)]">2小时前</span>
+                {mockComments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${comment.color} flex items-center justify-center flex-shrink-0`}>
+                      <span className="text-white text-sm font-medium">{comment.avatar}</span>
                     </div>
-                    <p className="text-sm text-[var(--muted-foreground)] mb-2">
-                      文章写得很好，收获很大！特别是关于AI编程的实战案例部分，非常实用。
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
-                      <button className="flex items-center gap-1 hover:text-[#ff7d00] transition-colors">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        点赞
-                      </button>
-                      <button className="flex items-center gap-1 hover:text-[#ff7d00] transition-colors">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        回复
-                      </button>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[var(--foreground)] font-medium">{comment.name}</span>
+                        <span className="text-xs text-[var(--muted-foreground)]">{comment.time}</span>
+                      </div>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {comment.content}
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex gap-3 p-3 bg-[var(--secondary)]/50 rounded-lg">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a371f7] to-[#db61a2] flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">AI</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[var(--foreground)] font-medium">AI学习达人</span>
-                      <span className="text-xs text-[var(--muted-foreground)]">5小时前</span>
-                    </div>
-                    <p className="text-sm text-[var(--muted-foreground)] mb-2">
-                      期待更多关于Cursor的进阶教程，非常感谢分享！
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
-                      <button className="flex items-center gap-1 hover:text-[#ff7d00] transition-colors">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        点赞
-                      </button>
-                      <button className="flex items-center gap-1 hover:text-[#ff7d00] transition-colors">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        回复
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden sticky top-20">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-              <span className="font-semibold text-[var(--foreground)]">分享</span>
-              <span className="text-xs text-[var(--muted-foreground)]">让更多人看到</span>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-4 gap-2">
-                <button className="flex flex-col items-center gap-1 p-3 bg-[var(--secondary)] rounded-lg hover:bg-[var(--border)] transition-colors">
-                  <svg className="w-5 h-5 text-[#3fb950]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                  </svg>
-                  <span className="text-xs text-[var(--muted-foreground)]">微信</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-3 bg-[var(--secondary)] rounded-lg hover:bg-[var(--border)] transition-colors">
-                  <svg className="w-5 h-5 text-[#58a6ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
-                  </svg>
-                  <span className="text-xs text-[var(--muted-foreground)]">微博</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-3 bg-[var(--secondary)] rounded-lg hover:bg-[var(--border)] transition-colors">
-                  <svg className="w-5 h-5 text-[#db61a2]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-                  </svg>
-                  <span className="text-xs text-[var(--muted-foreground)]">LinkedIn</span>
-                </button>
-                <button className="flex flex-col items-center gap-1 p-3 bg-[var(--secondary)] rounded-lg hover:bg-[var(--border)] transition-colors">
-                  <svg className="w-5 h-5 text-[var(--foreground)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  <span className="text-xs text-[var(--muted-foreground)]">复制</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <ShareButton />
 
           <div className="bg-gradient-to-br from-[#ff7d00]/10 to-[#ff9500]/5 border border-[#ff7d00]/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -266,15 +189,15 @@ export default async function BlogPostPage({ params }: Props) {
               <span className="font-semibold text-[var(--foreground)]">每日推荐</span>
             </div>
             <div className="space-y-3">
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                如何用AI工具提升10倍开发效率？
-              </Link>
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                2024年最值得学习的AI编程技能
-              </Link>
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                从零开始学习大语言模型开发
-              </Link>
+              {dailyPosts.map((dailyPost) => (
+                <Link
+                  key={dailyPost.id}
+                  href={`/blog/${dailyPost.id}`}
+                  className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2"
+                >
+                  {dailyPost.title}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -286,52 +209,47 @@ export default async function BlogPostPage({ params }: Props) {
               <span className="font-semibold text-[var(--foreground)]">相关文章</span>
             </div>
             <div className="p-3">
-              <Link href="#" className="block px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors line-clamp-2">
-                AI编程入门指南：从零开始学习人工智能开发
-              </Link>
-              <Link href="#" className="block px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors line-clamp-2">
-                深入理解大语言模型：Transformer架构详解
-              </Link>
-              <Link href="#" className="block px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors line-clamp-2">
-                Python机器学习实战：构建你的第一个AI模型
-              </Link>
-              <Link href="#" className="block px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors line-clamp-2">
-                Cursor高级技巧：让AI帮你写更优质的代码
-              </Link>
+              {relatedPosts.map((relatedPost) => (
+                <Link
+                  key={relatedPost.id}
+                  href={`/blog/${relatedPost.id}`}
+                  className="block px-3 py-2 rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition-colors line-clamp-2"
+                >
+                  {relatedPost.title}
+                </Link>
+              ))}
             </div>
           </div>
 
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
               <svg className="w-5 h-5 text-[#58a6ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                <path d="M20.317 4.37a19.791 19.791 0 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028 14.09 14.09 0 001.226-1.994.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
               </svg>
-              <span className="font-semibold text-[var(--foreground)]">推荐关注</span>
+              <span className="font-semibold text-[var(--foreground)]">标签云</span>
+              <span className="ml-auto text-xs text-[var(--muted-foreground)]">相关标签</span>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-juejin flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">AI</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[var(--foreground)]">AI编程之家</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">12.5k 关注者</p>
-                </div>
-                <button className="px-3 py-1 text-xs bg-[var(--secondary)] border border-[var(--border)] rounded-full text-[var(--muted-foreground)] hover:text-[#ff7d00] hover:border-[#ff7d00]/50 transition-colors">
-                  关注
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a371f7] to-[#db61a2] flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">PY</span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[var(--foreground)]">Python学习</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">8.3k 关注者</p>
-                </div>
-                <button className="px-3 py-1 text-xs bg-[var(--secondary)] border border-[var(--border)] rounded-full text-[var(--muted-foreground)] hover:text-[#ff7d00] hover:border-[#ff7d00]/50 transition-colors">
-                  关注
-                </button>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-3">
+                {relatedTags.map((tag, index) => {
+                  const isRelated = post.tags?.includes(tag.name);
+                  const sizeClass = isRelated ? 'text-sm' : 'text-xs';
+                  const paddingClass = isRelated ? 'px-4 py-2' : 'px-3 py-1.5';
+                  return (
+                    <Link
+                      key={tag.name}
+                      href={`/blog?tag=${encodeURIComponent(tag.name)}`}
+                      className={`${paddingClass} ${sizeClass} rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md ${
+                        isRelated
+                          ? "bg-gradient-to-r from-[#ff7d00] to-[#ff9500] text-white shadow-lg shadow-[#ff7d00]/20"
+                          : "bg-gradient-to-r from-[var(--secondary)] to-[var(--border)] text-[var(--muted-foreground)] hover:from-[var(--border)] hover:to-[var(--secondary)]"
+                      }`}
+                    >
+                      <span className="font-medium">#{tag.name}</span>
+                      <span className={`ml-1 ${isRelated ? 'opacity-90' : 'opacity-60'}`}>({tag.count})</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

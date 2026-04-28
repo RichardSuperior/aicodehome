@@ -1,70 +1,148 @@
+'use client'
+
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from "next/link";
-import { getAllPosts } from "../../lib/post";
 
-export default function BlogListPage() {
-  const posts = getAllPosts();
+interface Post {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  tags?: string[];
+  views?: number;
+  likes?: number;
+}
 
-  const tabs = [
-    { id: "all", label: "全部" },
-    { id: "hot", label: "热门", badge: "HOT" },
-    { id: "new", label: "最新", badge: "NEW" },
-    { id: "recommend", label: "推荐" },
+interface Tag {
+  name: string;
+  count: number;
+}
+
+function BlogContent() {
+  const searchParams = useSearchParams();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 10;
+
+  const currentTag = searchParams.get('tag') || null;
+  const currentTech = searchParams.get('tech') || null;
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (currentTech && currentTech !== 'all') {
+        params.set('tech', currentTech);
+      } else if (currentTag) {
+        params.set('tag', currentTag);
+      }
+      
+      const response = await fetch(`/api/posts?${params.toString()}`);
+      const data = await response.json();
+      setPosts(data.posts);
+      setAllTags(data.tags);
+      setCurrentPage(1);
+      setLoading(false);
+    };
+
+    fetchPosts();
+  }, [currentTag, currentTech]);
+
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = posts.slice(startIndex, endIndex);
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePageClick = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const displayTags = allTags.slice(0, 7);
+
+  const techStack = [
+    { id: "all", label: "全部", color: "#8b8b8b" },
+    { id: "AI", label: "AI", color: "#FF7D00" },
+    { id: "Python", label: "Python", color: "#3776AB" },
+    { id: "前端", label: "前端", color: "#58A6FF" },
+    { id: "后端", label: "后端", color: "#A371F7" },
+    { id: "机器学习", label: "机器学习", color: "#3FB950" },
+    { id: "深度学习", label: "深度学习", color: "#DB61A2" },
+    { id: "大语言模型", label: "大语言模型", color: "#F85149" },
   ];
 
-  const tags = [
-    { name: "Python", count: "128", active: false },
-    { name: "AI编程", count: "256", active: true },
-    { name: "前端", count: "89", active: false },
-    { name: "后端", count: "76", active: false },
-    { name: "LLM", count: "45", active: false },
-    { name: "Cursor", count: "32", active: false },
-    { name: "DeepSeek", count: "28", active: false },
-    { name: "更多", count: "", active: false },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#ff7d00] border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)] mb-1">AI编程技术文章</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)] mb-1">
+            {currentTag || currentTech ? `${currentTag || currentTech} 相关文章` : "AI编程技术文章"}
+          </h1>
           <p className="text-sm text-[var(--muted-foreground)]">探索AI编程的最新技术和实战经验</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            写文章
-          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden mb-6">
-            <div className="flex items-center gap-1 px-4 py-3 border-b border-[var(--border)]">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                    tab.id === "hot"
-                      ? "text-[#ff7d00] bg-[#ff7d00]/10"
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
+              {techStack.map((tech) => (
+                <Link
+                  key={tech.id}
+                  href={`/blog?tech=${tech.id}`}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                    currentTech === tech.id || (!currentTech && !currentTag && tech.id === 'all')
+                      ? "bg-[var(--secondary)] text-[var(--foreground)]"
                       : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
                   }`}
                 >
-                  {tab.label}
-                  {tab.badge && (
-                    <span className="px-1.5 py-0.5 text-xs font-bold bg-gradient-juejin text-white rounded-full">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
+                  <span className="flex items-center gap-1.5">
+                    <span 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: tech.color }}
+                    ></span>
+                    {tech.label}
+                  </span>
+                </Link>
               ))}
             </div>
+            {(currentTag || currentTech) && (
+              <div className="px-4 py-2 bg-[var(--secondary)]/50 border-b border-[var(--border)] flex items-center gap-2">
+                <span className="text-sm text-[var(--muted-foreground)]">当前筛选:</span>
+                <span className="px-2 py-1 text-sm bg-[#ff7d00]/10 text-[#ff7d00] rounded-lg">
+                  {currentTag || currentTech}
+                </span>
+                <Link href="/blog" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                  清除筛选
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
-            {posts.map((post) => (
+            {currentPosts.map((post) => (
               <Link
                 key={post.id}
                 href={`/blog/${post.id}`}
@@ -106,13 +184,13 @@ export default function BlogListPage() {
                               <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
-                            1.2k
+                            {(post.views || 0).toLocaleString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            32
+                            {(post.likes || 0).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-[#58a6ff] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -129,107 +207,170 @@ export default function BlogListPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">
-              <svg className="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 19l-7-7 7-7" />
+          {currentPosts.length === 0 && (
+            <div className="text-center py-12 bg-[var(--card)] border border-[var(--border)] rounded-xl">
+              <svg className="w-12 h-12 mx-auto text-[var(--muted-foreground)] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              上一页
-            </button>
-            <span className="px-4 py-2 bg-gradient-juejin text-white text-sm font-medium rounded-lg">1</span>
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">2</button>
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">3</button>
-            <button className="px-4 py-2 bg-[var(--secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50 transition-colors">
-              下一页
-              <svg className="w-4 h-4 inline ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+              <p className="text-[var(--muted-foreground)]">暂无相关文章</p>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <button 
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 border rounded-lg text-sm transition-colors ${
+                  currentPage === 1
+                    ? "bg-[var(--secondary)] border-[var(--border)] text-[var(--muted-foreground)] cursor-not-allowed"
+                    : "bg-[var(--secondary)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50"
+                }`}
+              >
+                <svg className="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+                上一页
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageClick(page)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === page
+                      ? "bg-gradient-juejin text-white"
+                      : "bg-[var(--secondary)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button 
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 border rounded-lg text-sm transition-colors ${
+                  currentPage === totalPages
+                    ? "bg-[var(--secondary)] border-[var(--border)] text-[var(--muted-foreground)] cursor-not-allowed"
+                    : "bg-[var(--secondary)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[#ff7d00]/50"
+                }`}
+              >
+                下一页
+                <svg className="w-4 h-4 inline ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
               <svg className="w-5 h-5 text-[#ff7d00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.317 4.37a19.791 19.791 0 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028 14.09 14.09 0 001.226-1.994.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
+                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              <span className="font-semibold text-[var(--foreground)]">标签分类</span>
+              <span className="font-semibold text-[var(--foreground)]">热门标签</span>
             </div>
-            <div className="p-3">
-              {tags.map((tag) => (
+            <div className="p-2">
+              {displayTags.map((tag, index) => (
                 <Link
                   key={tag.name}
-                  href={`/blog?tag=${tag.name}`}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${
-                    tag.active
-                      ? "bg-[#ff7d00]/10 text-[#ff7d00]"
-                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
+                  href={`/blog?tag=${encodeURIComponent(tag.name)}`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--secondary)] transition-colors ${
+                    currentTag === tag.name ? "bg-[var(--secondary)]" : ""
                   }`}
                 >
-                  <span>{tag.name}</span>
-                  {tag.count && <span className="text-xs opacity-70">{tag.count}</span>}
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    index < 3 ? "bg-gradient-juejin text-white" : "bg-[var(--secondary)] text-[var(--muted-foreground)]"
+                  }`}>
+                    {index + 1}
+                  </span>
+                  <span className="flex-1 text-left text-sm text-[var(--foreground)]">#{tag.name}</span>
+                </Link>
+              ))}
+              {allTags.length > 7 && (
+                <Link
+                  href="/blog"
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm text-[#58a6ff] hover:bg-[var(--secondary)] transition-all"
+                >
+                  查看全部标签
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
+              <svg className="w-5 h-5 text-[#ff7d00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold text-[var(--foreground)]">最新文章</span>
+            </div>
+            <div className="p-3">
+              {posts.slice(0, 3).map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.id}`}
+                  className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-[var(--secondary)] transition-colors"
+                >
+                  <span className="text-[#ff7d00] font-bold text-lg flex-shrink-0">•</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[var(--foreground)] line-clamp-2 mb-1">{post.title}</p>
+                    <span className="text-xs text-[var(--muted-foreground)]">{post.date}</span>
+                  </div>
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#ff7d00]/10 to-[#ff9500]/5 border border-[#ff7d00]/20 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <svg className="w-5 h-5 text-[#ff7d00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-semibold text-[var(--foreground)]">每日推荐</span>
-            </div>
-            <div className="space-y-3">
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                如何用AI工具提升10倍开发效率？
-              </Link>
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                2024年最值得学习的AI编程技能
-              </Link>
-              <Link href="#" className="block text-sm text-[var(--foreground)] hover:text-[#ff7d00] transition-colors line-clamp-2">
-                从零开始学习大语言模型开发
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)]">
               <svg className="w-5 h-5 text-[#58a6ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <span className="font-semibold text-[var(--foreground)]">推荐关注</span>
+              <span className="font-semibold text-[var(--foreground)]">站点统计</span>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-juejin flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">AI</span>
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#ff7d00]">{posts.length}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">文章总数</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[var(--foreground)]">AI编程之家</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">12.5k 关注者</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#58a6ff]">{allTags.length}</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">标签总数</p>
                 </div>
-                <button className="px-3 py-1 text-xs bg-[var(--secondary)] border border-[var(--border)] rounded-full text-[var(--muted-foreground)] hover:text-[#ff7d00] hover:border-[#ff7d00]/50 transition-colors">
-                  关注
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a371f7] to-[#db61a2] flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">PY</span>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#a371f7]">
+                    {posts.reduce((sum, post) => sum + (post.views || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">总阅读量</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[var(--foreground)]">Python学习</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">8.3k 关注者</p>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#3fb950]">
+                    {posts.reduce((sum, post) => sum + (post.likes || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">总点赞数</p>
                 </div>
-                <button className="px-3 py-1 text-xs bg-[var(--secondary)] border border-[var(--border)] rounded-full text-[var(--muted-foreground)] hover:text-[#ff7d00] hover:border-[#ff7d00]/50 transition-colors">
-                  关注
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BlogListPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#ff7d00] border-t-transparent"></div>
+        </div>
+      </div>
+    }>
+      <BlogContent />
+    </Suspense>
   );
 }
